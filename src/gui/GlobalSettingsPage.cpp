@@ -155,6 +155,7 @@ namespace gsr {
         tint_color_radio_button->add_item(TR("Red"), "amd");
         tint_color_radio_button->add_item(TR("Green"), "nvidia");
         tint_color_radio_button->add_item(TR("Blue"), "intel");
+        tint_color_radio_button->add_item(TR("Purple"), "purple");
         tint_color_radio_button->on_selection_changed = [](std::string_view, std::string_view id) {
             if(id == "amd")
                 get_color_theme().tint_color = mgl::Color(221, 0, 49);
@@ -162,6 +163,8 @@ namespace gsr {
                 get_color_theme().tint_color = mgl::Color(118, 185, 0);
             else if(id == "intel")
                 get_color_theme().tint_color = mgl::Color(8, 109, 183);
+            else if(id == "purple")
+                get_color_theme().tint_color = mgl::Color(168, 85, 247);
             return true;
         };
         list->add_widget(std::move(tint_color_radio_button));

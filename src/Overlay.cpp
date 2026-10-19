@@ -1470,11 +1470,8 @@ namespace gsr {
         top_bar_background = mgl::Rectangle(mgl::vec2f(get_theme().window_width, get_theme().window_height*0.06f).floor());
         top_bar_text = mgl::Text("GPU Screen Recorder", get_theme().top_bar_font_desc.c_str());
         logo_sprite = mgl::Sprite(&get_theme().logo_texture);
-        close_button_widget.set_size(mgl::vec2f(top_bar_background.get_size().y * 0.50f, top_bar_background.get_size().y * 0.50f).floor());
-
         bg_screenshot_overlay.set_color(bg_color);
         top_bar_background.set_color(mgl::Color(0, 0, 0, 180));
-        //top_bar_text.set_color(get_color_theme().tint_color);
         top_bar_text.set_position((top_bar_background.get_position() + top_bar_background.get_size()*0.5f - top_bar_text.get_bounds().size*0.5f).floor());
 
         logo_sprite.set_height((int)(top_bar_background.get_size().y * 0.65f));
@@ -1483,7 +1480,11 @@ namespace gsr {
             top_bar_background.get_size().y * 0.5f - logo_sprite.get_size().y * 0.5f
         ).floor());
 
-        close_button_widget.set_position(mgl::vec2f(get_theme().window_width - close_button_widget.get_size().x - logo_sprite.get_position().x, top_bar_background.get_size().y * 0.5f - close_button_widget.get_size().y * 0.5f).floor());
+        const float top_bar_h = top_bar_background.get_size().y;
+        const float close_btn_w = std::floor(top_bar_h * 1.25f);
+        const float close_btn_h = top_bar_h;
+        close_button_widget.set_size(mgl::vec2f(close_btn_w, close_btn_h));
+        close_button_widget.set_position(mgl::vec2f(get_theme().window_width - close_btn_w, 0.0f));
 
         while(!page_stack.empty()) {
             page_stack.pop();
@@ -1604,34 +1605,29 @@ namespace gsr {
 
         close_button_widget.draw_handler = [&](mgl::Window &window, mgl::vec2f pos, mgl::vec2f size) {
             const int border_size = std::max(1.0f, 0.0015f * get_theme().window_height);
+            const float icon_box_size = std::floor(size.y * 0.50f);
+            const mgl::vec2f icon_pos = (pos + size * 0.5f - mgl::vec2f(icon_box_size, icon_box_size) * 0.5f).floor();
+            const mgl::FloatRect hit_rect(pos, size);
+
+            if(hit_rect.contains(window.get_mouse_position().to_vec2f()))
+                draw_rectangle_outline(window, icon_pos, mgl::vec2f(icon_box_size, icon_box_size), get_color_theme().tint_color, border_size);
+
             const float padding_size = std::max(1.0f, 0.003f * get_theme().window_height);
             const mgl::vec2f padding(padding_size, padding_size);
-            const float hit_padding = 10.0f;
-            const mgl::FloatRect hit_rect(mgl::vec2f(pos.x - hit_padding, pos.y - hit_padding), mgl::vec2f(size.x + hit_padding * 2.0f, size.y + hit_padding * 2.0f));
-            if(hit_rect.contains(window.get_mouse_position().to_vec2f()))
-                draw_rectangle_outline(window, pos.floor(), size.floor(), get_color_theme().tint_color, border_size);
-
             mgl::Sprite close_sprite(&get_theme().close_texture);
-            close_sprite.set_position(pos + padding);
-            close_sprite.set_size(size - padding * 2.0f);
+            close_sprite.set_position(icon_pos + padding);
+            close_sprite.set_size(mgl::vec2f(icon_box_size - padding_size * 2.0f, icon_box_size - padding_size * 2.0f));
             window.draw(close_sprite);
         };
 
         close_button_widget.event_handler = [&](mgl::Event &event, mgl::Window&, mgl::vec2f pos, mgl::vec2f size) {
-            const float hit_padding = 10.0f;
-            const mgl::FloatRect hit_rect(mgl::vec2f(pos.x - hit_padding, pos.y - hit_padding), mgl::vec2f(size.x + hit_padding * 2.0f, size.y + hit_padding * 2.0f));
-            if(event.type == mgl::Event::MouseButtonPressed && event.mouse_button.button == mgl::Mouse::Left) {
-                close_button_pressed_inside = hit_rect.contains(mgl::vec2f(event.mouse_button.x, event.mouse_button.y));
-                if(close_button_pressed_inside)
-                    return false;
-            } else if(event.type == mgl::Event::MouseButtonReleased && event.mouse_button.button == mgl::Mouse::Left) {
-                const bool was_pressed = close_button_pressed_inside;
-                close_button_pressed_inside = false;
-                if(was_pressed && hit_rect.contains(mgl::vec2f(event.mouse_button.x, event.mouse_button.y))) {
+            const mgl::FloatRect hit_rect(pos, size);
+            if((event.type == mgl::Event::MouseButtonPressed || event.type == mgl::Event::MouseButtonReleased) && event.mouse_button.button == mgl::Mouse::Left) {
+                if(hit_rect.contains(mgl::vec2f(event.mouse_button.x, event.mouse_button.y))) {
                     while(!page_stack.empty()) {
                         page_stack.pop();
                     }
-                    hide();
+                    hide_next_frame();
                     return false;
                 }
             }
@@ -2577,11 +2573,9 @@ namespace gsr {
     }
 
     void Overlay::process_gsr_output() {
-        if(replay_save_show_notification && replay_save_clock.get_elapsed_time_seconds() >= replay_saving_notification_timeout_seconds) {
-            replay_save_show_notification = false;
-            if(config.replay_config.record_options.show_notifications)
-                show_notification(TR("Saving replay, this might take some time"), notification_timeout_seconds, mgl::Color(255, 255, 255), get_color_theme().tint_color, NotificationType::REPLAY);
-        }
+        // Do not show the intermediate "Saving replay, this might take some time" notification.
+        // The user only wants the final "Saved a %s replay of %s" notification.
+        replay_save_show_notification = false;
 
         char buffer[1024];
         if(gpu_screen_recorder_process_output_file) {

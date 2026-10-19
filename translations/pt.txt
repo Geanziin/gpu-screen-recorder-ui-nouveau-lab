@@ -151,6 +151,7 @@ Accent color=Cor de destaque
 Red=Vermelho
 Green=Verde
 Blue=Azul
+Purple=Roxo
 
 Start program on system startup?=Iniciar o programa com o sistema?
 Yes=Sim

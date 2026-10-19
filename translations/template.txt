@@ -156,6 +156,7 @@ Accent color=
 Red=
 Green=
 Blue=
+Purple=
 
 Start program on system startup?=
 Yes=

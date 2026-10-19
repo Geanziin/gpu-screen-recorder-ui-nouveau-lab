@@ -23,6 +23,9 @@ namespace gsr {
     }
 
     static mgl::Color color_name_to_color(const std::string &color_name) {
+        if(color_name == "purple")
+            return mgl::Color(168, 85, 247);
+
         GpuVendor vendor = GpuVendor::UNKNOWN;
         if(color_name == "amd")
             vendor = GpuVendor::AMD;
