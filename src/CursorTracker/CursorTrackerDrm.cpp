@@ -34,11 +34,8 @@ namespace gsr {
         int num_connectors;
     } drm_connectors;
 
-    // Nouveau is not supported by gpu screen recorder. The other drm drivers dont do hardware accelerated
-    // rendering, mesa falls back to llvmpipe (software rendering) on them.
-    // Note: this list is kept in sync with gpu screen recorder
+    // Nouveau is now supported via Mesa VA-API NVENC
     static const char *unsupported_drm_drivers[] = {
-        "nouveau",
         "vkms",
         "vgem",
         "simpledrm",
