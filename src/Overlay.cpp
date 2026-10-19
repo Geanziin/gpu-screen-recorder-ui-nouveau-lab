@@ -1470,7 +1470,7 @@ namespace gsr {
         top_bar_background = mgl::Rectangle(mgl::vec2f(get_theme().window_width, get_theme().window_height*0.06f).floor());
         top_bar_text = mgl::Text("GPU Screen Recorder", get_theme().top_bar_font_desc.c_str());
         logo_sprite = mgl::Sprite(&get_theme().logo_texture);
-        close_button_widget.set_size(mgl::vec2f(top_bar_background.get_size().y * 0.35f, top_bar_background.get_size().y * 0.35f).floor());
+        close_button_widget.set_size(mgl::vec2f(top_bar_background.get_size().y * 0.50f, top_bar_background.get_size().y * 0.50f).floor());
 
         bg_screenshot_overlay.set_color(bg_color);
         top_bar_background.set_color(mgl::Color(0, 0, 0, 180));
@@ -1606,7 +1606,9 @@ namespace gsr {
             const int border_size = std::max(1.0f, 0.0015f * get_theme().window_height);
             const float padding_size = std::max(1.0f, 0.003f * get_theme().window_height);
             const mgl::vec2f padding(padding_size, padding_size);
-            if(mgl::FloatRect(pos, size).contains(window.get_mouse_position().to_vec2f()))
+            const float hit_padding = 10.0f;
+            const mgl::FloatRect hit_rect(mgl::vec2f(pos.x - hit_padding, pos.y - hit_padding), mgl::vec2f(size.x + hit_padding * 2.0f, size.y + hit_padding * 2.0f));
+            if(hit_rect.contains(window.get_mouse_position().to_vec2f()))
                 draw_rectangle_outline(window, pos.floor(), size.floor(), get_color_theme().tint_color, border_size);
 
             mgl::Sprite close_sprite(&get_theme().close_texture);
@@ -1616,13 +1618,20 @@ namespace gsr {
         };
 
         close_button_widget.event_handler = [&](mgl::Event &event, mgl::Window&, mgl::vec2f pos, mgl::vec2f size) {
+            const float hit_padding = 10.0f;
+            const mgl::FloatRect hit_rect(mgl::vec2f(pos.x - hit_padding, pos.y - hit_padding), mgl::vec2f(size.x + hit_padding * 2.0f, size.y + hit_padding * 2.0f));
             if(event.type == mgl::Event::MouseButtonPressed && event.mouse_button.button == mgl::Mouse::Left) {
-                close_button_pressed_inside = mgl::FloatRect(pos, size).contains(mgl::vec2f(event.mouse_button.x, event.mouse_button.y));
-            } else if(event.type == mgl::Event::MouseButtonReleased && event.mouse_button.button == mgl::Mouse::Left && close_button_pressed_inside) {
-                if(mgl::FloatRect(pos, size).contains(mgl::vec2f(event.mouse_button.x, event.mouse_button.y))) {
+                close_button_pressed_inside = hit_rect.contains(mgl::vec2f(event.mouse_button.x, event.mouse_button.y));
+                if(close_button_pressed_inside)
+                    return false;
+            } else if(event.type == mgl::Event::MouseButtonReleased && event.mouse_button.button == mgl::Mouse::Left) {
+                const bool was_pressed = close_button_pressed_inside;
+                close_button_pressed_inside = false;
+                if(was_pressed && hit_rect.contains(mgl::vec2f(event.mouse_button.x, event.mouse_button.y))) {
                     while(!page_stack.empty()) {
                         page_stack.pop();
                     }
+                    hide();
                     return false;
                 }
             }
